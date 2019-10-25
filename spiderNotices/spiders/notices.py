@@ -8,6 +8,7 @@ from pymongo import MongoClient
 import re
 import hashlib
 from spiderNotices.items import NoticeItem
+from spiderNotices.text_mongo import TextMongo
 from spiderNotices.utils import ashx_json
 
 
@@ -36,12 +37,13 @@ class NoticesSpider(scrapy.Spider):
         """
 
         self.db = MongoClient(self.settings.get('REMOTEMONGO')['uri'])[self.settings.get('REMOTEMONGO')['notices']]
-        self.logger.info('爬取股票数量{}'.format(len(self.code_list)))
+        if self.settings.get('PAGE_SIZE'):
+            to_parse = self.code_list
+            self.logger.info('增量更新：PAGE_SIZE{},to_parse数量{}'.format(self.settings.get('PAGE_SIZE'), len(to_parse)))
 
-        for stk in self.code_list:
-            item = NoticeItem()
-            item['code'] = stk
-            if self.settings.get('PAGE_SIZE'):
+            for stk in to_parse:
+                item = NoticeItem()
+                item['code'] = stk
                 params = {
                     'StockCode': stk,
                     'CodeType': 1,
@@ -52,7 +54,15 @@ class NoticesSpider(scrapy.Spider):
                 yield scrapy.Request(
                     url=url, callback=self.parse, meta={'item': copy.deepcopy(item)}
                 )
-            else:
+        else:
+            existed = TextMongo().get_notices_stk()
+            to_parse = list(set(self.code_list).difference(set(existed)))
+            to_parse.sort()
+            self.logger.info('剩余量更新：PAGE_SIZE为None,to_parse数量{}'.format(len(to_parse)))
+
+            for stk in to_parse:
+                item = NoticeItem()
+                item['code'] = stk
                 params = {
                     'StockCode': stk,
                     'CodeType': 1,
@@ -62,7 +72,7 @@ class NoticesSpider(scrapy.Spider):
                 url = self.url_ashx + '?' + urllib.parse.urlencode(params)
                 first = requests.get(url)
                 page_size = ashx_json(first.text)['TotalCount']
-                self.logger.warning('{}数据总数{}'.format(item['code'], page_size))
+                self.logger.debug('{}数据总数{}'.format(item['code'], page_size))
                 if page_size == 0:  # 有些证券，网站没有数据。page_size为0，parse函数中会报错，所以眺过
                     continue
 
@@ -86,7 +96,8 @@ class NoticesSpider(scrapy.Spider):
 
         # 已存在的数据，且content不为空。
         # TODO 按需设置有效数据的规则，例如pdf处理
-        exsit_md5 = self.db[item['code']].find({'content_source': {'$ne': 0}}, {'_id': 1, 'href_md5': 1})
+        # exsit_md5 = self.db[item['code']].find({'content_source': {'$ne': 0}}, {'_id': 1, 'href_md5': 1})
+        exsit_md5 = self.db[item['code']].find({'content_source': {'$in': [0, 1]}}, {'_id': 1, 'href_md5': 1})
         exsit_md5 = [x.get('href_md5') for x in exsit_md5]
 
         total = ashx_json(response.body_as_unicode())

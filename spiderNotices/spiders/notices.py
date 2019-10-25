@@ -72,7 +72,7 @@ class NoticesSpider(scrapy.Spider):
                 url = self.url_ashx + '?' + urllib.parse.urlencode(params)
                 first = requests.get(url)
                 page_size = ashx_json(first.text)['TotalCount']
-                self.logger.debug('{}数据总数{}'.format(item['code'], page_size))
+                self.logger.warning('{}数据总数{}'.format(item['code'], page_size))
                 if page_size == 0:  # 有些证券，网站没有数据。page_size为0，parse函数中会报错，所以眺过
                     continue
 

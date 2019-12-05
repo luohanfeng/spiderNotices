@@ -7,7 +7,7 @@ import datetime
 
 
 # 一页数据量
-# PAGE_SIZE = 50
+PAGE_SIZE = 50
 
 # 远程数据库
 REMOTEMONGO = {
@@ -44,7 +44,7 @@ DOWNLOAD_TIMEOUT = 120  # 下载超时时间
 
 today = datetime.datetime.now()
 SETTINGS_PATH = os.path.abspath(__file__)
-LOG_FILE = os.path.join(os.path.dirname(SETTINGS_PATH), f'log\\{today.year}_{today.month}_{today.day}.log')
+LOG_FILE = os.path.join(os.path.dirname(SETTINGS_PATH), f'log/{today.year}_{today.month}_{today.day}.log')
 LOG_LEVEL = 'WARNING'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent

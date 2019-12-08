@@ -3,6 +3,13 @@
 
 ## 运行方法
 - 1、本地安装mongodb数据库，python环境安装scrapy爬虫框架和requests等相关依赖。
+
+```
+conda install scrapy pandas requests Beautifulsoup4 pymongo
+
+pip install tushare
+```
+
 - 2、设置项目spiderNotices.settings.REMOTEMONGO
     - 数据库的uri: REMOTEMONGO['uri']
     - 所在数据库名称：REMOTEMONGO['aiNotices']

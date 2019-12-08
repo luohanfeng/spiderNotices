@@ -8,9 +8,12 @@ from pymongo import MongoClient
 import re
 import hashlib
 from spiderNotices.items import NoticeItem
+from spiderNotices.settings import TS_TOKEN
 from spiderNotices.text_mongo import TextMongo
 from spiderNotices.utils import ashx_json
 
+
+ts.pro_api(TS_TOKEN)
 
 class NoticesSpider(scrapy.Spider):
     name = 'notices'

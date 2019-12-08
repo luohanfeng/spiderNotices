@@ -7,7 +7,7 @@ import datetime
 
 
 # 一页数据量
-PAGE_SIZE = 50
+PAGE_SIZE = None
 
 # 远程数据库
 REMOTEMONGO = {
@@ -24,6 +24,7 @@ REMOTEMONGO = {
     # 'factor': 'aiFactor',
     'notices': 'aiNotices',
 }
+TS_TOKEN = '267d96feb1ca426bdef624d65470b9c33b1b5b51bbdc8c677d84971a'
 
 # --------------------------------------------------------------------------------------------
 # Scrapy settings for spiderNotices project

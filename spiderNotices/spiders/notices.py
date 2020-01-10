@@ -4,16 +4,14 @@ import tushare as ts
 import urllib
 import copy
 import requests
+from math import floor
 from pymongo import MongoClient
 import re
 import hashlib
 from spiderNotices.items import NoticeItem
-from spiderNotices.settings import TS_TOKEN
 from spiderNotices.text_mongo import TextMongo
 from spiderNotices.utils import ashx_json
 
-
-ts.pro_api(TS_TOKEN)
 
 class NoticesSpider(scrapy.Spider):
     name = 'notices'
@@ -58,8 +56,9 @@ class NoticesSpider(scrapy.Spider):
                     url=url, callback=self.parse, meta={'item': copy.deepcopy(item)}
                 )
         else:
-            existed = TextMongo().get_notices_stk()
-            to_parse = list(set(self.code_list).difference(set(existed)))
+            # existed = TextMongo().get_notices_stk()
+            # to_parse = list(set(self.code_list).difference(set(existed)))
+            to_parse = list(set(self.code_list))
             to_parse.sort()
             self.logger.info('剩余量更新：PAGE_SIZE为None,to_parse数量{}'.format(len(to_parse)))
 
@@ -74,21 +73,38 @@ class NoticesSpider(scrapy.Spider):
                 }
                 url = self.url_ashx + '?' + urllib.parse.urlencode(params)
                 first = requests.get(url)
-                page_size = ashx_json(first.text)['TotalCount']
-                self.logger.warning('{}数据总数{}'.format(item['code'], page_size))
-                if page_size == 0:  # 有些证券，网站没有数据。page_size为0，parse函数中会报错，所以眺过
+                try:
+                    page_size = ashx_json(first.text)['TotalCount']
+                except Exception as e:
+                    self.logger.error(f'{e}')
+                    page_size = 0  # 有些证券，网站没有数据。page_size为0，parse函数中会报错，所以眺过
                     continue
+                self.logger.warning('{}数据总数{}'.format(item['code'], page_size))
 
-                params = {
-                    'StockCode': stk,
-                    'CodeType': 1,
-                    'PageIndex': 1,
-                    'PageSize': page_size,
-                }
-                url = self.url_ashx + '?' + urllib.parse.urlencode(params)
-                yield scrapy.Request(
-                    url=url, callback=self.parse, meta={'item': copy.deepcopy(item)}
-                )
+                page_total = floor(page_size/50)
+                for page_index in list(range(1, page_total+1)):  # 分页取
+                    params = {
+                        'StockCode': stk,
+                        'CodeType': 1,
+                        'PageIndex': page_index,
+                        'PageSize': 50,
+                    }
+                    url = self.url_ashx + '?' + urllib.parse.urlencode(params)
+                    yield scrapy.Request(
+                        url=url, callback=self.parse, meta={'item': copy.deepcopy(item)}
+                    )
+
+                # fixme设置单页全取，有时会出错
+                # params = {
+                #     'StockCode': stk,
+                #     'CodeType': 1,
+                #     'PageIndex': 1,
+                #     'PageSize': page_size,
+                # }
+                # url = self.url_ashx + '?' + urllib.parse.urlencode(params)
+                # yield scrapy.Request(
+                #     url=url, callback=self.parse, meta={'item': copy.deepcopy(item)}
+                # )
 
     def parse(self, response):
         """
@@ -104,6 +120,8 @@ class NoticesSpider(scrapy.Spider):
         exsit_md5 = [x.get('href_md5') for x in exsit_md5]
 
         total = ashx_json(response.body_as_unicode())
+        if total.get('data') is None:
+            self.logger.error(f'{total}')
         for each in total.get('data'):
             item['ann_date'] = each.get('NOTICEDATE')
             item['ann_title'] = each.get('NOTICETITLE')

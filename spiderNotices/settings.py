@@ -14,17 +14,16 @@ REMOTEMONGO = {
     # 'uri': 'mongodb://read:read123456@120.92.189.17:27027',  # /?authSource=amdin&authMechanism=SCRAM-SHA-1
     #            'host': '120.92.189.17',
     #            'port': 27027,
-    'uri': 'mongodb://read:read123456@127.0.0.1:27017',  # 本地配置
+    'uri': 'mongodb://hfam:hfam5714@127.0.0.1:27017',  # 本地配置
     'host': '127.0.0.1',
     'port': 27017,
 
-    'username': 'read',
-    'password': 'read123456',
+    'username': 'hfam',
+    'password': 'hfam5714',
     # 'tushare': 'aiTushare',  # tushare数据的数据库名称
     # 'factor': 'aiFactor',
     'notices': 'aiNotices',
 }
-TS_TOKEN = '267d96feb1ca426bdef624d65470b9c33b1b5b51bbdc8c677d84971a'
 
 # --------------------------------------------------------------------------------------------
 # Scrapy settings for spiderNotices project

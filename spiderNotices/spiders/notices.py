@@ -38,9 +38,15 @@ class NoticesSpider(scrapy.Spider):
         """
 
         self.db = MongoClient(self.settings.get('REMOTEMONGO')['uri'])[self.settings.get('REMOTEMONGO')['notices']]
-        if self.settings.get('PAGE_SIZE'):
+        # PAGE_SIZE参数
+        if self.__dict__.get('PAGE_SIZE', None):
+            p_page_size =int(self.__dict__.get('PAGE_SIZE', None))  # 命令行中 -a PAGE_SIZE=50
+        else:
+            p_page_size = self.settings.get('PAGE_SIZE')  # settings.py中
+
+        if p_page_size:
             to_parse = self.code_list
-            self.logger.info('增量更新：PAGE_SIZE{},to_parse数量{}'.format(self.settings.get('PAGE_SIZE'), len(to_parse)))
+            self.logger.info('增量更新：PAGE_SIZE{},to_parse数量{}'.format(p_page_size, len(to_parse)))
 
             for stk in to_parse:
                 item = NoticeItem()
@@ -49,7 +55,7 @@ class NoticesSpider(scrapy.Spider):
                     'StockCode': stk,
                     'CodeType': 1,
                     'PageIndex': 1,
-                    'PageSize': self.settings.get('PAGE_SIZE'),
+                    'PageSize': p_page_size,
                 }
                 url = self.url_ashx + '?' + urllib.parse.urlencode(params)
                 yield scrapy.Request(

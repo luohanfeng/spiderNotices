@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
+import datetime
 import tushare as ts
 import urllib
 import copy
@@ -27,8 +28,8 @@ class NoticesSpider(scrapy.Spider):
     code_list.sort()
     # code_list = ['000001', '000002']
 
-    url_ashx = "http://data.eastmoney.com/notices/getdata.ashx"
-
+    url_ashx = "https://data.eastmoney.com/notices/getdata.ashx"  # http有问题用https
+    # handle_httpstatus_list = [200, 403]
     # 对应数据库
     db = None
 
@@ -46,7 +47,7 @@ class NoticesSpider(scrapy.Spider):
 
         if p_page_size:
             to_parse = self.code_list
-            self.logger.info('增量更新：PAGE_SIZE{},to_parse数量{}'.format(p_page_size, len(to_parse)))
+            self.logger.info('增量更新PAGE_SIZE：{},to_parse股票数量：{}'.format(p_page_size, len(to_parse)))
 
             for stk in to_parse:
                 item = NoticeItem()
@@ -85,7 +86,7 @@ class NoticesSpider(scrapy.Spider):
                     self.logger.error(f'{e}')
                     page_size = 0  # 有些证券，网站没有数据。page_size为0，parse函数中会报错，所以眺过
                     continue
-                self.logger.warning('{}数据总数{}'.format(item['code'], page_size))
+                print(datetime.datetime.now(), '{}数据总数{}'.format(item['code'], page_size))
 
                 page_total = floor(page_size/50)
                 for page_index in list(range(1, page_total+1)):  # 分页取

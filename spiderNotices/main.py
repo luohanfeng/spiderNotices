@@ -8,7 +8,7 @@ from scrapy import cmdline
 
 def run_notices():
     cmd_str = "scrapy crawl notices"
-    print('开始运行命令{}'.format(cmd_str))
+    print('cmd执行{}'.format(cmd_str))
     cmdline.execute(cmd_str.split())
 
 

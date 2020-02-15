@@ -46,6 +46,7 @@ today = datetime.datetime.now()
 SETTINGS_PATH = os.path.abspath(__file__)
 LOG_FILE = os.path.join(os.path.dirname(SETTINGS_PATH), f'log/{today.year}_{today.month}_{today.day}.log')
 LOG_LEVEL = 'WARNING'
+# LOG_LEVEL = 'INFO'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 # USER_AGENT = 'spiderNotices (+http://www.yourdomain.com)'
@@ -59,13 +60,13 @@ ROBOTSTXT_OBEY = False
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-# DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 10
 # The download delay setting will honor only one of:
 # CONCURRENT_REQUESTS_PER_DOMAIN = 16
 # CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
-# COOKIES_ENABLED = False
+COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
 # TELNETCONSOLE_ENABLED = False
@@ -87,8 +88,8 @@ ROBOTSTXT_OBEY = False
 DOWNLOADER_MIDDLEWARES = {
     # 'spiderNotices.middlewares.SpidernoticesDownloaderMiddleware': 543,
     #  'spiderNotices.middlewares.SeleniumMiddleware': 100,
-    # 'spiderNotices.middlewares.RandomUserAgent': 200,
-    # 'spiderNotices.middlewares.ProxyIpMiddleware': 201,
+    'spiderNotices.middlewares.RandomUserAgent': 200,
+    'spiderNotices.middlewares.ProxyIpMiddleware': 201,
 }
 
 # Enable or disable extensions

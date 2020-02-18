@@ -161,7 +161,7 @@ class ProxyIpMiddleware(object):
 
     def process_request(self, request, spider):
         try:
-            proxy = self._get_proxy()
+            proxy = self._get_proxy(request.url)
         except Exception as e:
             self.logger.warning('获取代理失败{}'.format(e))
             return
@@ -169,9 +169,9 @@ class ProxyIpMiddleware(object):
             if proxy:
                 request.meta["proxy"] = "http://" + proxy
 
-    def _get_proxy(self):
+    def _get_proxy(self, uri):
         proxy = requests.get(self.server_uri + "/get/").json().get('proxy')
-        if self._check_html(proxy):
+        if self._check_uri(proxy, uri):
             return proxy
         else:
             return None
@@ -179,16 +179,17 @@ class ProxyIpMiddleware(object):
     def _delete_proxy(self, proxy):
         requests.get(self.server_uri+"/delete/?proxy={}".format(proxy))
 
-    def _check_html(self, proxy):
+    def _check_uri(self, proxy, uri):
         retry_count = 5
         while retry_count > 0:
             try:
-                html = requests.get(self.test_web, proxies={"http": "http://{}".format(proxy)})
+                html = requests.get(uri, proxies={"http": "http://{}".format(proxy)})
                 if html.status_code == 200:
                     return True
             except Exception:
                 retry_count -= 1
         # 出错5次, 删除代理池中代理
+        self.logger.warning('不适用代理{}'.format(uri))
         self._delete_proxy(proxy)
         return False
 

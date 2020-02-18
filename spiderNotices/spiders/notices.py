@@ -67,7 +67,7 @@ class NoticesSpider(scrapy.Spider):
             # to_parse = list(set(self.code_list).difference(set(existed)))
             to_parse = list(set(self.code_list))
             to_parse.sort()
-            self.logger.info('剩余量更新：PAGE_SIZE为None,to_parse数量{}'.format(len(to_parse)))
+            self.logger.info('全量更新：PAGE_SIZE为None,to_parse数量{}'.format(len(to_parse)))
 
             for stk in to_parse:
                 item = NoticeItem()
@@ -86,7 +86,7 @@ class NoticesSpider(scrapy.Spider):
                     self.logger.error(f'{e}')
                     page_size = 0  # 有些证券，网站没有数据。page_size为0，parse函数中会报错，所以眺过
                     continue
-                print(datetime.datetime.now(), '{}数据总数{}'.format(item['code'], page_size))
+                print('运行时间{}证券{}数据总数{}'.format(datetime.datetime.now(), item['code'], page_size))
 
                 page_total = floor(page_size/50)
                 for page_index in list(range(1, page_total+1)):  # 分页取

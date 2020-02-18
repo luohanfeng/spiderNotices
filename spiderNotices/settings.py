@@ -20,8 +20,6 @@ REMOTEMONGO = {
 
     'username': 'hfam',
     'password': 'hfam5714',
-    # 'tushare': 'aiTushare',  # tushare数据的数据库名称
-    # 'factor': 'aiFactor',
     'notices': 'aiNotices',
 }
 
@@ -41,6 +39,9 @@ SPIDER_MODULES = ['spiderNotices.spiders']
 NEWSPIDER_MODULE = 'spiderNotices.spiders'
 
 DOWNLOAD_TIMEOUT = 120  # 下载超时时间
+RETRY_ENABLED = True  # 打开重试开关
+RETRY_TIMES = 5  # 重试次数
+RETRY_HTTP_CODES = [429,404,403,400]  # 重试
 
 today = datetime.datetime.now()
 SETTINGS_PATH = os.path.abspath(__file__)

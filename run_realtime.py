@@ -11,12 +11,12 @@ from scrapy import cmdline
 
 def run_notices():
     cmd_str = "scrapy crawl notices -a PAGE_SIZE=50"  # 带上外部参数
-    print(run_notices, 'cmd运行{}'.format(cmd_str))
+    print(datetime.datetime.now(), 'cmd运行{}'.format(cmd_str))
     cmdline.execute(cmd_str.split())
 
 
 if __name__ == '__main__':
-    schedule.every().hour.do(run_notices)
+    schedule.every(3).hour.do(run_notices)
     while True:
         schedule.run_pending()
         time.sleep(1)

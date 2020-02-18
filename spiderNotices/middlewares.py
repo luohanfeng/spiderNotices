@@ -153,13 +153,45 @@ class SeleniumMiddleware(object):
 
 class ProxyIpMiddleware(object):
     """
-    使用ip:port格式的代理。从47.103.1.245:5010获取
+    使用ip:port格式的代理。从127.0.0.1:5010构建的项目'proxy_pool'中获取
     """
+    server_uri = 'http://127.0.0.1:5010'
+    test_web = 'https://data.eastmoney.com'
+    logger = getLogger(__name__)
 
     def process_request(self, request, spider):
-        ip = requests.get('http://47.103.1.245:5010/get/').json()
-        if ip["proxy"]:
-            request.meta["proxy"] = "http://" + ip["proxy"]
+        try:
+            proxy = self._get_proxy(request.url)
+        except Exception as e:
+            self.logger.warning('获取代理失败{}'.format(e))
+            return
+        else:
+            if proxy:
+                request.meta["proxy"] = "http://" + proxy
+
+    def _get_proxy(self, uri):
+        proxy = requests.get(self.server_uri + "/get/").json().get('proxy')
+        if self._check_uri(proxy, uri):
+            return proxy
+        else:
+            return None
+
+    def _delete_proxy(self, proxy):
+        requests.get(self.server_uri+"/delete/?proxy={}".format(proxy))
+
+    def _check_uri(self, proxy, uri):
+        retry_count = 5
+        while retry_count > 0:
+            try:
+                html = requests.get(uri, proxies={"http": "http://{}".format(proxy)})
+                if html.status_code == 200:
+                    return True
+            except Exception:
+                retry_count -= 1
+        # 出错5次, 删除代理池中代理
+        self.logger.warning('不适用代理{}'.format(uri))
+        self._delete_proxy(proxy)
+        return False
 
 
 class RandomUserAgent(UserAgentMiddleware):

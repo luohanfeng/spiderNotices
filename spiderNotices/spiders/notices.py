@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import scrapy
+import datetime
 import tushare as ts
 import urllib
 import copy
 import requests
+from math import floor
 from pymongo import MongoClient
 import re
 import hashlib
@@ -26,8 +28,8 @@ class NoticesSpider(scrapy.Spider):
     code_list.sort()
     # code_list = ['000001', '000002']
 
-    url_ashx = "http://data.eastmoney.com/notices/getdata.ashx"
-
+    url_ashx = "https://data.eastmoney.com/notices/getdata.ashx"  # http有问题用https
+    # handle_httpstatus_list = [200, 403]
     # 对应数据库
     db = None
 
@@ -37,9 +39,15 @@ class NoticesSpider(scrapy.Spider):
         """
 
         self.db = MongoClient(self.settings.get('REMOTEMONGO')['uri'])[self.settings.get('REMOTEMONGO')['notices']]
-        if self.settings.get('PAGE_SIZE'):
+        # PAGE_SIZE参数
+        if self.__dict__.get('PAGE_SIZE', None):
+            p_page_size =int(self.__dict__.get('PAGE_SIZE', None))  # 命令行中 -a PAGE_SIZE=50
+        else:
+            p_page_size = self.settings.get('PAGE_SIZE')  # settings.py中
+
+        if p_page_size:
             to_parse = self.code_list
-            self.logger.info('增量更新：PAGE_SIZE{},to_parse数量{}'.format(self.settings.get('PAGE_SIZE'), len(to_parse)))
+            self.logger.info('增量更新PAGE_SIZE：{},to_parse股票数量：{}'.format(p_page_size, len(to_parse)))
 
             for stk in to_parse:
                 item = NoticeItem()
@@ -48,17 +56,18 @@ class NoticesSpider(scrapy.Spider):
                     'StockCode': stk,
                     'CodeType': 1,
                     'PageIndex': 1,
-                    'PageSize': self.settings.get('PAGE_SIZE'),
+                    'PageSize': p_page_size,
                 }
                 url = self.url_ashx + '?' + urllib.parse.urlencode(params)
                 yield scrapy.Request(
                     url=url, callback=self.parse, meta={'item': copy.deepcopy(item)}
                 )
         else:
-            existed = TextMongo().get_notices_stk()
-            to_parse = list(set(self.code_list).difference(set(existed)))
+            # existed = TextMongo().get_notices_stk()
+            # to_parse = list(set(self.code_list).difference(set(existed)))
+            to_parse = list(set(self.code_list))
             to_parse.sort()
-            self.logger.info('剩余量更新：PAGE_SIZE为None,to_parse数量{}'.format(len(to_parse)))
+            self.logger.info('全量更新：PAGE_SIZE为None,to_parse数量{}'.format(len(to_parse)))
 
             for stk in to_parse:
                 item = NoticeItem()
@@ -71,21 +80,38 @@ class NoticesSpider(scrapy.Spider):
                 }
                 url = self.url_ashx + '?' + urllib.parse.urlencode(params)
                 first = requests.get(url)
-                page_size = ashx_json(first.text)['TotalCount']
-                self.logger.warning('{}数据总数{}'.format(item['code'], page_size))
-                if page_size == 0:  # 有些证券，网站没有数据。page_size为0，parse函数中会报错，所以眺过
+                try:
+                    page_size = ashx_json(first.text)['TotalCount']
+                except Exception as e:
+                    self.logger.error(f'{e}')
+                    page_size = 0  # 有些证券，网站没有数据。page_size为0，parse函数中会报错，所以眺过
                     continue
+                print('运行时间{}证券{}数据总数{}'.format(datetime.datetime.now(), item['code'], page_size))
 
-                params = {
-                    'StockCode': stk,
-                    'CodeType': 1,
-                    'PageIndex': 1,
-                    'PageSize': page_size,
-                }
-                url = self.url_ashx + '?' + urllib.parse.urlencode(params)
-                yield scrapy.Request(
-                    url=url, callback=self.parse, meta={'item': copy.deepcopy(item)}
-                )
+                page_total = floor(page_size/50)
+                for page_index in list(range(1, page_total+1)):  # 分页取
+                    params = {
+                        'StockCode': stk,
+                        'CodeType': 1,
+                        'PageIndex': page_index,
+                        'PageSize': 50,
+                    }
+                    url = self.url_ashx + '?' + urllib.parse.urlencode(params)
+                    yield scrapy.Request(
+                        url=url, callback=self.parse, meta={'item': copy.deepcopy(item)}
+                    )
+
+                # fixme设置单页全取，有时会出错
+                # params = {
+                #     'StockCode': stk,
+                #     'CodeType': 1,
+                #     'PageIndex': 1,
+                #     'PageSize': page_size,
+                # }
+                # url = self.url_ashx + '?' + urllib.parse.urlencode(params)
+                # yield scrapy.Request(
+                #     url=url, callback=self.parse, meta={'item': copy.deepcopy(item)}
+                # )
 
     def parse(self, response):
         """
@@ -101,6 +127,8 @@ class NoticesSpider(scrapy.Spider):
         exsit_md5 = [x.get('href_md5') for x in exsit_md5]
 
         total = ashx_json(response.body_as_unicode())
+        if total.get('data') is None:
+            self.logger.error(f'{total}')
         for each in total.get('data'):
             item['ann_date'] = each.get('NOTICEDATE')
             item['ann_title'] = each.get('NOTICETITLE')

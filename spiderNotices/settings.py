@@ -7,21 +7,19 @@ import datetime
 
 
 # 一页数据量
-PAGE_SIZE = 50
+PAGE_SIZE = None
 
 # 远程数据库
 REMOTEMONGO = {
     # 'uri': 'mongodb://read:read123456@120.92.189.17:27027',  # /?authSource=amdin&authMechanism=SCRAM-SHA-1
     #            'host': '120.92.189.17',
     #            'port': 27027,
-    'uri': 'mongodb://read:read123456@127.0.0.1:27017',  # 本地配置
+    'uri': 'mongodb://hfam:hfam5714@127.0.0.1:27017',  # 本地配置
     'host': '127.0.0.1',
     'port': 27017,
 
-    'username': 'read',
-    'password': 'read123456',
-    # 'tushare': 'aiTushare',  # tushare数据的数据库名称
-    # 'factor': 'aiFactor',
+    'username': 'hfam',
+    'password': 'hfam5714',
     'notices': 'aiNotices',
 }
 
@@ -41,11 +39,15 @@ SPIDER_MODULES = ['spiderNotices.spiders']
 NEWSPIDER_MODULE = 'spiderNotices.spiders'
 
 DOWNLOAD_TIMEOUT = 120  # 下载超时时间
+RETRY_ENABLED = True  # 打开重试开关
+RETRY_TIMES = 5  # 重试次数
+RETRY_HTTP_CODES = [429,404,403,400]  # 重试
 
 today = datetime.datetime.now()
 SETTINGS_PATH = os.path.abspath(__file__)
 LOG_FILE = os.path.join(os.path.dirname(SETTINGS_PATH), f'log/{today.year}_{today.month}_{today.day}.log')
 LOG_LEVEL = 'WARNING'
+# LOG_LEVEL = 'INFO'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 # USER_AGENT = 'spiderNotices (+http://www.yourdomain.com)'
@@ -59,13 +61,13 @@ ROBOTSTXT_OBEY = False
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-# DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 10
 # The download delay setting will honor only one of:
 # CONCURRENT_REQUESTS_PER_DOMAIN = 16
 # CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
-# COOKIES_ENABLED = False
+COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
 # TELNETCONSOLE_ENABLED = False
@@ -87,8 +89,8 @@ ROBOTSTXT_OBEY = False
 DOWNLOADER_MIDDLEWARES = {
     # 'spiderNotices.middlewares.SpidernoticesDownloaderMiddleware': 543,
     #  'spiderNotices.middlewares.SeleniumMiddleware': 100,
-    # 'spiderNotices.middlewares.RandomUserAgent': 200,
-    # 'spiderNotices.middlewares.ProxyIpMiddleware': 201,
+    'spiderNotices.middlewares.RandomUserAgent': 200,
+    'spiderNotices.middlewares.ProxyIpMiddleware': 201,
 }
 
 # Enable or disable extensions
